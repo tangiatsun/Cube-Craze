@@ -14,13 +14,13 @@ int out = 2;
 int flag = 0;
 volatile int counter = 0;
 int countR = 0, countG = 0, countB = 0;
-int current_color = 0;  // 1 is yellow, 2 is blue, 3 is black, 0 is unclear
+volatile int current_color = 0;  // 1 is yellow, 2 is blue, 3 is black, 0 is unclear
 
 int QTI_sig_R = 14;
 int QTI_sig_L = 15;
 
 // ----- For wheels -----
-volatile int robot_movement = FWD ;
+volatile int robot_movement = FWD;
 volatile int timing_wheel_R = NEU;  // How long between 20 ms to pulse
 volatile int timing_wheel_L = NEU;  // How long between 20 ms to pulse
 volatile int output_R = 0;
@@ -33,14 +33,14 @@ int counterR = 0;
 int counterL = 0;
 // int dummy = 0;
 //storage variables
-int Servo1 = 9;
-int Servo2 = 10;
+int ServoR = 9;
+int ServoL = 10;
 
 
 // ----- Setup -----
 void setup() {
-  pinMode(Servo1, OUTPUT);
-  pinMode(Servo2, OUTPUT);
+  pinMode(ServoR, OUTPUT);
+  pinMode(ServoL, OUTPUT);
   pinMode(s0, OUTPUT);
   pinMode(s1, OUTPUT);
   pinMode(s2, OUTPUT);
@@ -86,7 +86,7 @@ ISR(TIMER2_OVF_vect)  //the timer 2, 10ms interrupt overflow again. Internal ove
 {
   TCNT2 = 100;
   flag++;
-  Serial.println("Color");
+  // Serial.println("Color");
   if (flag == 1) {
     countR = counter;
     // Serial.print("red=");
@@ -103,14 +103,14 @@ ISR(TIMER2_OVF_vect)  //the timer 2, 10ms interrupt overflow again. Internal ove
     countB = counter;
     // Serial.print(" blue=");
     // Serial.print(countB);
-    // Serial.print("\n");
+    Serial.print("\n");
     digitalWrite(s2, LOW);
     digitalWrite(s3, LOW);
 
   } else if (flag == 4) {
-    if (countR < 100 && countG < 100 && countB > 150) {
+    if (countR < 100 && countG < 100 && countB > 120) {
       current_color = 2;  // blue
-    } else if (countR > 300 && countG > 250 && countB < 200 && countB > 150) {
+    } else if (countR > 240 && countG > 160 && countB < 150 && countB > 100) {
       current_color = 1;  // yellow
     } else if (countR < 50 && countG < 50 && countB < 50) {
       current_color = 3;  // black
@@ -151,7 +151,7 @@ ISR(TIMER1_COMPA_vect) {
       timing_wheel_R = DT;
     }
     counterR = 0;
-    digitalWrite(Servo1, output_R);
+    digitalWrite(ServoR, output_R);
   }
   if (counterL >= timing_wheel_L) {
     if (output_L == LOW) {
@@ -168,7 +168,7 @@ ISR(TIMER1_COMPA_vect) {
       timing_wheel_L = DT;
     }
     counterL = 0;
-    digitalWrite(Servo2, output_L);
+    digitalWrite(ServoL, output_L);
   }
 }
 
@@ -180,21 +180,21 @@ void loop() {
   delay(10);
   int starting_color = current_color;
   while (1) {
-    if (current_color != starting_color) {
-      robot_movement = TURN_R;
-      delay(L_turn_time);
-      robot_movement = FWD;
-    }
-    if (current_color = 3) {
-      robot_movement = TURN_R;
-      delay(L_turn_time * 2);
-      robot_movement = FWD;
-    }
-    print_color();
+    robot_movement = BWD;
+    delay(10);
+    robot_movement = FWD;
+    delay(10);
+    // print_color();
+    // if (current_color != starting_color) {
+    //   robot_movement = TURN_R;
+    //   delay(L_turn_time);
+    //   robot_movement = FWD;
+    // }
+    // if (current_color = 3) {
+    //   robot_movement = TURN_R;
+    //   delay(L_turn_time * 2);
+    //   robot_movement = FWD;
+    // }
+    // print_color();
   }
 }
-// delay(5);
-// TIMSK0 |= (0 << OCIE0A);
-// TIMSK1 |= (0 << OCIE1A);
-// TIMSK2 |= (0 << OCIE2A);
-// //do other things here
