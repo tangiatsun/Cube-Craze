@@ -3,10 +3,10 @@
 #define TURN_L 2
 #define FWD 3
 #define BWD 4
-#define CCW 13
-#define NEU 15
-#define CW 17
-#define DT 200
+#define CCW 130
+#define NEU 150
+#define CW 170
+#define DT 2000
 
 // ----- For Color Sensor -----
 int s0 = 3, s1 = 4, s2 = 5, s3 = 6;
@@ -26,8 +26,8 @@ volatile int timing_wheel_L = NEU;  // How long between 20 ms to pulse
 volatile int output_R = 0;
 volatile int output_L = 0;
 
-#define L_turn_time 13
-#define R_turn_time 13
+#define L_turn_time 1100
+#define R_turn_time 1100
 
 int counterR = 0;
 int counterL = 0;
@@ -50,8 +50,8 @@ void setup() {
   TCCR1A = 0;  // set entire TCCR1A register to 0
   TCCR1B = 0;  // same for TCCR1B
   TCNT1 = 0;   //initialize counter value to 0
-  // match register = [16,000,000/(8*(1kHz))] - 1
-  OCR1A = 199;
+  // match register = [16,000,000/(8*(100kHz))] - 1
+  OCR1A = 19;
   // turn on CTC mode
   TCCR1B |= (1 << WGM12);
   TCCR1B |= (1 << CS11);  // 64 prescaler
@@ -103,7 +103,6 @@ ISR(TIMER2_OVF_vect)  //the timer 2, 10ms interrupt overflow again. Internal ove
     countB = counter;
     // Serial.print(" blue=");
     // Serial.print(countB);
-    Serial.print("\n");
     digitalWrite(s2, LOW);
     digitalWrite(s3, LOW);
 
@@ -141,10 +140,10 @@ ISR(TIMER1_COMPA_vect) {
       output_R = HIGH;
       if (robot_movement == STOP) {
         timing_wheel_R = NEU;
-      } else if (robot_movement == FWD || robot_movement == TURN_R) {
-        timing_wheel_R = CW;
-      } else if (robot_movement == BWD || robot_movement == TURN_L) {
+      } else if (robot_movement == FWD || robot_movement == TURN_L) {
         timing_wheel_R = CCW;
+      } else if (robot_movement == BWD || robot_movement == TURN_R) {
+        timing_wheel_R = CW;
       }
     } else if (output_R == HIGH) {
       output_R = LOW;
@@ -159,9 +158,9 @@ ISR(TIMER1_COMPA_vect) {
       if (robot_movement == STOP) {
         timing_wheel_L = NEU;
       } else if (robot_movement == BWD || robot_movement == TURN_L) {
-        timing_wheel_L = CW;
-      } else if (robot_movement == FWD || robot_movement == TURN_R) {
         timing_wheel_L = CCW;
+      } else if (robot_movement == FWD || robot_movement == TURN_R) {
+        timing_wheel_L = CW;
       }
     } else if (output_L == HIGH) {
       output_L = LOW;
@@ -177,13 +176,34 @@ void loop() {
   // Serial.println("Start");
   TCS();
   robot_movement = FWD;
-  delay(10);
+  // delay(10);
   int starting_color = current_color;
   while (1) {
-    robot_movement = BWD;
-    delay(10);
+    // robot_movement = BWD;
+    // delay(10);
     robot_movement = FWD;
-    delay(10);
+    delay(1000);
+    robot_movement = TURN_R;
+    delay(R_turn_time);
+    robot_movement = FWD;
+
+    delay(1000);
+    robot_movement = TURN_L;
+    delay(L_turn_time * 2);
+    robot_movement = FWD;
+    delay(2000);
+    robot_movement = BWD;
+    delay(1000);
+    robot_movement = TURN_L;
+    delay(L_turn_time);
+    robot_movement = FWD;
+    delay(1500);
+    robot_movement = TURN_R;
+    delay(R_turn_time * 2);
+    robot_movement = STOP;
+    while (1)
+      ;
+    // delay(10);
     // print_color();
     // if (current_color != starting_color) {
     //   robot_movement = TURN_R;
