@@ -13,22 +13,21 @@ void setup() {
 }
 
 void loop() {
-  ls1 = RCTime(12);  // replace this with the pin you attatched the WHITE wire of the LEFT qti sensor too
-  ls2 = RCTime(13);  // replace this with the pin you attatched the WHITE wire of the RIGHT qti sensor too
-
+  ls1 = RCTime(0);  // replace this with the pin you attatched the WHITE wire of the LEFT qti sensor too
+  ls2 = RCTime(1);  // replace this with the pin you attatched the WHITE wire of the RIGHT qti sensor too
+  Serial.print("LS1 ");
   Serial.println(ls2);
+  Serial.print("LS2 ");
   Serial.println(ls1);
 
 }
-long RCTime(int sensorIn) {
-  long duration = 0;
+int RCTime(int sensorIn) {
+  int output = 0;
   pinMode(sensorIn, OUTPUT);
   digitalWrite(sensorIn, HIGH);
   delay(1);
-  pinMode(sensorIn, INPUT);
   digitalWrite(sensorIn, LOW);
-  while (digitalRead(sensorIn)) {
-    duration++;
-  }
-  return duration;
+  pinMode(sensorIn, INPUT);
+  output = digitalRead(sensorIn);
+  return output;
 }
