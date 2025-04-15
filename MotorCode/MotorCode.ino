@@ -4,7 +4,7 @@
 #define FWD 3
 #define BWD 4
 #define CCW 130
-#define NEU 150
+#define NEU 147
 #define CW 170
 #define DT 2000
 #define YELLOW 1
@@ -25,7 +25,7 @@ int QTI_sig_R = 12;
 int QTI_sig_L = 13;
 
 // ----- For wheels -----
-volatile int robot_movement = FWD;
+volatile int robot_movement = NEU;
 volatile int timing_wheel_R = NEU;  // How long between 20 ms to pulse
 volatile int timing_wheel_L = NEU;  // How long between 20 ms to pulse
 volatile int output_R = 0;
@@ -38,9 +38,10 @@ int counterL = 0;
 
 
 //storage variables
-int ServoR = 9;
-int ServoL = 10;
+int ServoR = 10;
+int ServoL = 9;
 int ServoTop = 11;
+int startButton = 8;
 #define L_turn_time 643
 #define R_turn_time 643
 
@@ -51,6 +52,7 @@ void setup() {
   // top_servo.detach();
   Serial.begin(115200);
   Serial.println("Begin");
+  pinMode(startButton, INPUT);
   pinMode(ServoR, OUTPUT);
   pinMode(ServoL, OUTPUT);
   pinMode(ServoTop, OUTPUT);
@@ -229,18 +231,22 @@ ISR(TIMER1_COMPA_vect) {
 
 void turn_R_degree(int degree) {
   robot_movement = TURN_R;
-  delay(R_turn_time * degree / 90);
-  Serial.println("Right turn");
+  delay(R_turn_time * (degree / 90));
+  robot_movement = NEU;
+  Serial.print("Right turn: ");
+  Serial.println(degree);
 }
 
 void turn_L_degree(int degree) {
   robot_movement = TURN_L;
-  delay(L_turn_time * degree / 90);
-  Serial.println("Left turn");
+  delay(L_turn_time * (degree / 90));
+  robot_movement = NEU;
+  Serial.print("Left turn: ");
+  Serial.println(degree);
 }
 
 // Returns 0 if both white, 1 if left, 2 if right, 3 if both
-int read_QTI() {
+int edge_scan() {
   int output = 0;
   long durationR = 0;
   long durationL = 0;
@@ -261,15 +267,28 @@ int read_QTI() {
     durationR += QTI_reading_R;
     durationL += QTI_reading_L;
   }
-  if (durationR < 10) {
+  if (durationR > 10) {
     output += 2;
   }
-  if (durationL < 10) {
+  if (durationL > 10) {
     output += 1;
   }
+  if (output == 1) {
+    turn_R_degree(90);
+  }
+  if (output == 2) {
+    turn_L_degree(90);
+  }
+  if (output == 3) {
+    turn_R_degree(180);
+  }
+  if (output != 0) {
+    Serial.println("EDGE");
+  }
+  // UNCOMMENT FOR CALIBRATION
   // Serial.print("Right: ");
-  // Serial.println(durationR);
-  // Serial.print("Left: ");
+  // Serial.print(durationR);
+  // Serial.print(" Left: ");
   // Serial.println(durationL);
   return output;
 }
@@ -305,11 +324,48 @@ int start_color = OTHER;
 void loop() {
   // Serial.println("Start");
   // delay(30);
-  // start_color = current_color;
-  // robot_movement = FWD;
+
+  robot_movement = STOP;
+  // while (!digitalRead(startButton)) {
+  // while (1) {
+  //   // start_color = current_color;
+  //   // Serial.println(edge_scan());
+  //   // Serial.print("Current color: ");
+  //   // Serial.println(current_color);
+  // }
+  delay(2000);
+  Serial.println("Begun");
+  init_count = 1;
   // Serial.println(start_color);
-  // while (1)
-  //   ;
+  while (!edge_scan()) {
+    robot_movement = FWD;
+    Serial.println("1");
+  }
+  Serial.println("1e");
+  int past_color = current_color;
+  int zigzag = 1;
+  robot_movement = FWD;
+  delay(1000);
+  robot_movement = STOP;
+  // Serial.println(edge_scan());
+  while (!edge_scan()) {
+    // robot_movement = FWD;
+    // if (past_color != current_color) {
+    //   robot_movement = FWD;
+    //   Serial.println("turn");
+    //   delay(1000);
+    //   if (zigzag) {
+    //     turn_L_degree(90);
+    //     zigzag = !zigzag;
+    //   } else {
+    //     turn_R_degree(90);
+    //   }
+    // }
+  }
+  Serial.println("end");
+  robot_movement = STOP;
+  while(1);
+  // delay(100);
   // // move forward until black on QTI
   // // repeat until black on QTI
   // //    turn 90 degrees to face partially into the opponents field
@@ -320,21 +376,7 @@ void loop() {
   // //    walk until black on QTI
   // //    turn 90 degrees
   // //   int direction = 0;
-  // while (!read_QTI()) {
-  //   robot_movement = FWD;
-  // }
-  // int QTI = read_QTI();
-  // if (QTI == 1) {
-  //   turn_R_degree(90);
-  // }
-  // if (QTI == 2) {
-  //   turn_L_degree(90);
-  // }
-  // if (QTI == 3) {
-  //   turn_R_degree(180);
-  // }
-  // robot_movement = FWD;
-  // delay(100);
+
 
   //   int past_color = current_color;
   //   while(!read_QTI()) {
