@@ -208,7 +208,11 @@ ISR(TIMER1_COMPA_vect) {
       timing_wheel_R = DT;
     }
     counterR = 0;
-    digitalWrite(ServoR, output_R);
+    if (robot_movement == STOP) {
+      digitalWrite(ServoR, HIGH);
+    } else {
+      digitalWrite(ServoR, output_R);
+    }
   }
   if (counterL >= timing_wheel_L) {
     if (output_L == LOW) {
@@ -225,14 +229,18 @@ ISR(TIMER1_COMPA_vect) {
       timing_wheel_L = DT;
     }
     counterL = 0;
-    digitalWrite(ServoL, output_L);
+    if (robot_movement == STOP) {
+      digitalWrite(ServoL, HIGH);
+    } else {
+      digitalWrite(ServoL, output_L);
+    }
   }
 }
 
 void turn_R_degree(int degree) {
   robot_movement = TURN_R;
   delay(R_turn_time * (degree / 90));
-  robot_movement = NEU;
+  robot_movement = STOP;
   Serial.print("Right turn: ");
   Serial.println(degree);
 }
@@ -240,7 +248,7 @@ void turn_R_degree(int degree) {
 void turn_L_degree(int degree) {
   robot_movement = TURN_L;
   delay(L_turn_time * (degree / 90));
-  robot_movement = NEU;
+  robot_movement = STOP;
   Serial.print("Left turn: ");
   Serial.println(degree);
 }
@@ -273,18 +281,23 @@ int edge_scan() {
   if (durationL > 10) {
     output += 1;
   }
-  if (output == 1) {
-    turn_R_degree(90);
-  }
-  if (output == 2) {
-    turn_L_degree(90);
-  }
-  if (output == 3) {
-    turn_R_degree(180);
-  }
   if (output != 0) {
-    Serial.println("EDGE");
+    robot_movement = BWD;
+    delay(200);
+    if (output == 1) {
+      turn_R_degree(90);
+      robot_movement = FWD;
+    }
+    if (output == 2) {
+      turn_L_degree(90);
+      robot_movement = FWD;
+    }
+    if (output == 3) {
+      turn_R_degree(180);
+      robot_movement = FWD;
+    }
   }
+
   // UNCOMMENT FOR CALIBRATION
   // Serial.print("Right: ");
   // Serial.print(durationR);
@@ -320,51 +333,69 @@ int edge_scan() {
 // Movement for the initial arm release is not included
 // QTI sensors are not included yet
 
-int start_color = OTHER;
+// int start_color = OTHER;
 void loop() {
   // Serial.println("Start");
   // delay(30);
 
   robot_movement = STOP;
-  // while (!digitalRead(startButton)) {
-  // while (1) {
-  //   // start_color = current_color;
-  //   // Serial.println(edge_scan());
-  //   // Serial.print("Current color: ");
-  //   // Serial.println(current_color);
-  // }
   delay(2000);
-  Serial.println("Begun");
-  init_count = 1;
-  // Serial.println(start_color);
+  int start_color = current_color;
+  Serial.print("Start  color: ");
+  Serial.println(start_color);
+  while (1) {
+    edge_scan();
+    robot_movement = FWD;
+  }
   while (!edge_scan()) {
     robot_movement = FWD;
-    Serial.println("1");
   }
-  Serial.println("1e");
   int past_color = current_color;
   int zigzag = 1;
+  Serial.print("Past color: ");
+  Serial.println(past_color);
+  while (1)
+    ;
+  while (!edge_scan()) {
+    robot_movement = FWD;
+    if (past_color != current_color) {
+      if (zigzag) {
+        turn_L_degree(90);
+        zigzag = !zigzag;
+      } else {
+        turn_R_degree(90);
+        zigzag = !zigzag;
+      }
+    }
+  }
+  Serial.println("end");
+  while (1)
+    ;
+  // Serial.println("1e");
+  // int past_color = current_color;
+  // int zigzag = 1;
   robot_movement = FWD;
   delay(1000);
   robot_movement = STOP;
   // Serial.println(edge_scan());
-  while (!edge_scan()) {
-    // robot_movement = FWD;
-    // if (past_color != current_color) {
-    //   robot_movement = FWD;
-    //   Serial.println("turn");
-    //   delay(1000);
-    //   if (zigzag) {
-    //     turn_L_degree(90);
-    //     zigzag = !zigzag;
-    //   } else {
-    //     turn_R_degree(90);
-    //   }
-    // }
-  }
-  Serial.println("end");
-  robot_movement = STOP;
-  while(1);
+  // while (!edge_scan()) {
+  // robot_movement = FWD;
+  // if (past_color != current_color) {
+  //   robot_movement = FWD;
+  //   Serial.println("turn");
+  //   delay(1000);
+  //   if (zigzag) {
+  //     turn_L_degree(90);
+  //     zigzag = !zigzag;
+  //   } else {
+  //     turn_R_degree(90);
+  //   }
+  // }
+  // }
+  // Serial.println("end");
+  // robot_movement = STOP;
+  // while (1)
+  //   ;
   // delay(100);
   // // move forward until black on QTI
   // // repeat until black on QTI
